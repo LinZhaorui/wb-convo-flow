@@ -1,0 +1,27 @@
+{
+  "name": "wb-convo-flow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "WorkBuddy 对话可视化工作流插件：标签化浏览工作空间对话 + 受 Langflow/Dify 启发的可视化编排",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5173",
+    "server": "node server/server.js",
+    "start": "node server/server.js",
+    "mcp": "node server/mcp-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@xyflow/react": "^12.3.5",
+    "express": "^4.21.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}
