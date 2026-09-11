@@ -80,7 +80,7 @@ npm run dev        # 终端 2：Vite 开发服务器 (5173，已配置 /api 代�
 |------|------|------|
 | Windows | `WB Convo Flow-0.3.0-setup.exe` | NSIS 安装包，可改安装目录、建桌面快捷方式 |
 | macOS | `WB Convo Flow-0.3.0-x64.dmg` / `...-arm64.dmg`（及同名 `.zip`） | 支持 Intel 与 Apple Silicon；**未签名**，首次打开见下方提示 |
-| Linux | `WB Convo Flow-0.3.0-x64.AppImage` / `...-x64.deb` | AppImage 直接运行；`.deb` 可 `dpkg -i` 安装 |
+| Linux | `WB Convo Flow-0.3.0-x86_64.AppImage` | 通用 AppImage，赋予可执行权限后直接运行；`.deb` 可在本地具备 dpkg/fakeroot 时启用 |
 
 > macOS 未签名说明：由于仓库未配置 Apple 开发者证书，macOS 安装包为未签名构建。首次打开若被 Gatekeeper 拦截，请在「访达」中**右键 → 打开**，或执行 `xattr -cr /Applications/WB\ Convo\ Flow.app` 后重新打开。
 

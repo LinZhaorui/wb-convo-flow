@@ -80,7 +80,7 @@ Grab the package for your platform from the GitHub **Releases** page:
 |----------|------|-------|
 | Windows | `WB Convo Flow-0.3.0-setup.exe` | NSIS installer — choose install dir, desktop shortcut |
 | macOS | `WB Convo Flow-0.3.0-x64.dmg` / `...-arm64.dmg` (plus `.zip`) | Intel & Apple Silicon; **unsigned** — see note below |
-| Linux | `WB Convo Flow-0.3.0-x64.AppImage` / `...-x64.deb` | AppImage runs directly; `.deb` via `dpkg -i` |
+| Linux | `WB Convo Flow-0.3.0-x86_64.AppImage` | Universal AppImage — `chmod +x` then run; `.deb` can be enabled locally when dpkg/fakeroot are present |
 
 > macOS unsigned note: the repo has no Apple Developer certificate, so the macOS build is unsigned. If Gatekeeper blocks the first launch, **right-click → Open** in Finder, or run `xattr -cr /Applications/WB\ Convo\ Flow.app` and try again.
 

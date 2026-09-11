@@ -43,9 +43,10 @@ mac:
   artifactName: ${productName}-${version}-${arch}.${ext}
 linux:
   category: Development
+  # CI runner 缺少构建 .deb 所需的底层工具（fakeroot/dpkg 环境），故 CI 仅产出通用 AppImage；
+  # 本地具备 dpkg/fakeroot 时可在 electron-builder.yml 中追加 deb 目标重新打包。
   target:
     - AppImage
-    - deb
   artifactName: ${productName}-${version}-${arch}.${ext}
 # 发布到 GitHub Releases（CI 用 GITHUB_TOKEN 自动发布）
 publish:

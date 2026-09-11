@@ -80,7 +80,7 @@ jobs:
           |------|------|
           | Windows | \`WB Convo Flow-${VERSION}-setup.exe\` (NSIS) |
           | macOS | \`WB Convo Flow-${VERSION}-x64.dmg\` / \`...-arm64.dmg\` (+ .zip) |
-          | Linux | \`WB Convo Flow-${VERSION}-x86_64.AppImage\` / \`..._amd64.deb\` |
+          | Linux | \`WB Convo Flow-${VERSION}-x86_64.AppImage\` (通用包；.deb 可在本地具备 dpkg/fakeroot 时启用) |
 
           > macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键→打开，或 \`xattr -cr /Applications/WB\\\\ Convo\\\\ Flow.app\`。
           "
