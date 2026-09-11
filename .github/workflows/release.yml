@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   build:
@@ -56,6 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,16 +69,10 @@ jobs:
           path: out
           merge-multiple: true
 
-      - name: List collected assets
-        run: |
-          echo "=== collected assets ==="
-          ls -la out
-
       - name: Publish to GitHub Releases (idempotent, never deletes)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
           VERSION=$(node -p "require('./package.json').version")
           TAG="v$VERSION"
           NOTES="## WB Convo Flow ${TAG}
@@ -85,17 +81,34 @@ jobs:
 
           | 平台 | 文件 |
           |------|------|
-          | Windows | \`WB Convo Flow-${VERSION}-setup.exe\` (NSIS) |
-          | macOS | \`WB Convo Flow-${VERSION}-x64.dmg\` / \`...-arm64.dmg\` (+ .zip) |
-          | Linux | \`WB Convo Flow-${VERSION}-x86_64.AppImage\` (通用包；.deb 可在本地具备 dpkg/fakeroot 时启用) |
+          | Windows | WB Convo Flow-${VERSION}-setup.exe (NSIS) |
+          | macOS | WB Convo Flow-${VERSION}-x64.dmg / -arm64.dmg (+ .zip) |
+          | Linux | WB Convo Flow-${VERSION}-x86_64.AppImage (通用包；.deb 可在本地具备 dpkg/fakeroot 时启用) |
 
-          > macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键→打开，或执行 xattr -cr 解除隔离。"
+          macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键打开，或执行 xattr -cr 解除隔离。"
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG 已存在，补充/覆盖缺失资产..."
-            gh release upload "$TAG" --clobber out/*
-          else
-            echo "创建新 Release $TAG ..."
-            gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest out/*
+          {
+            echo "== node =="; node -v
+            echo "== gh version =="; gh --version || echo "gh missing?"
+            echo "== gh auth status =="; gh auth status 2>&1 || echo "(gh auth reported issue)"
+            echo "== out contents =="; ls -la out
+            echo "== out file count =="; ls -1 out | wc -l
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "== release $TAG exists -> upload (clobber) =="
+              gh release upload "$TAG" --clobber out/* && echo PUBLISH_OK
+            else
+              echo "== create release $TAG =="
+              gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest out/* && echo PUBLISH_OK
+            fi
+          } 2>&1 | tee /tmp/pub.log
+
+          if ! grep -q PUBLISH_OK /tmp/pub.log; then
+            echo "== PUBLISH FAILED; opening debug issue via REST API =="
+            curl -sk --noproxy '*' -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -d "{\"title\":\"CI publish debug $(date -u +%H%M%SZ)\",\"body\":$(python3 -c "import json,sys;print(json.dumps(open('/tmp/pub.log',encoding='utf-8',errors='replace').read()))")}" \
+              https://api.github.com/repos/LinZhaorui/wb-convo-flow/issues || echo "(failed to open diagnostic issue)"
+            exit 1
           fi
           echo "发布完成: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
