@@ -44,11 +44,18 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload artifacts
+      - name: Upload installer artifacts (files only, no unpacked dirs)
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os }}
-          path: release/*
+          # 只上传产物文件，排除 linux-unpacked/mac/win-unpacked 等解包目录与 builder-debug.yml
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.AppImage
+            release/*.yml
+            release/*.blockmap
           if-no-files-found: error
 
   release:
@@ -87,23 +94,26 @@ jobs:
 
           macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键打开，或执行 xattr -cr 解除隔离。"
 
-          {
-            echo "== node =="; node -v
-            echo "== gh version =="; gh --version || echo "gh missing?"
-            echo "== gh auth status =="; gh auth status 2>&1 || echo "(gh auth reported issue)"
-            echo "== out contents =="; ls -la out
-            echo "== out file count =="; ls -1 out | wc -l
-            if gh release view "$TAG" >/dev/null 2>&1; then
-              echo "== release $TAG exists -> upload (clobber) =="
-              gh release upload "$TAG" --clobber out/* && echo PUBLISH_OK
-            else
-              echo "== create release $TAG =="
-              gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest out/* && echo PUBLISH_OK
-            fi
-          } 2>&1 | tee /tmp/pub.log
+          FILTER='out -maxdepth 1 -type f ! -name builder-debug.yml'
+          echo "== collected installer files =="
+          find $FILTER -printf '  %f\n'
 
-          if ! grep -q PUBLISH_OK /tmp/pub.log; then
-            echo "== PUBLISH FAILED; opening debug issue via REST API =="
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "== release $TAG exists -> upload (clobber) =="
+            find $FILTER -print0 | xargs -0 -r gh release upload "$TAG" --clobber
+            PUB_RC=$?
+          else
+            echo "== create release $TAG =="
+            find $FILTER -print0 | xargs -0 -r gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest
+            PUB_RC=$?
+          fi
+
+          if [ "$PUB_RC" != "0" ]; then
+            echo "== PUBLISH FAILED (rc=$PUB_RC); opening debug issue via REST API =="
+            {
+              echo "FILES:"; find $FILTER -printf '  %f\n'
+              echo "gh release view:"; gh release view "$TAG" 2>&1 || true
+            } 2>&1 | tee /tmp/pub.log
             curl -sk --noproxy '*' -X POST \
               -H "Authorization: Bearer $GH_TOKEN" \
               -H "Accept: application/vnd.github+json" \
@@ -112,3 +122,12 @@ jobs:
             exit 1
           fi
           echo "发布完成: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+
+      - name: Close diagnostic issues on success
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for n in $(gh issue list --search "in:title CI publish debug" --state open --json number -q '.[].number' 2>/dev/null); do
+            gh issue close "$n" --comment "resolved by fix" || true
+          done
