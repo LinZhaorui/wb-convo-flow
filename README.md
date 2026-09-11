@@ -68,6 +68,42 @@ npm run dev        # 终端 2：Vite 开发服务器 (5173，已配置 /api 代�
 >
 > 保存后在 WorkBuddy「连接器管理」页点击**信任**启用。可用工具：`open_flow_studio`（拉起服务并返回地址）、`list_workspaces`（工作空间概览）。
 
+## 桌面端原生安装包
+
+本项目同时提供 **Windows / macOS / Linux** 三平台桌面安装包（Electron 封装，自带运行时，开箱即用）。
+
+### 下载
+
+前往 GitHub **Releases** 页面下载对应平台安装包：
+
+| 平台 | 文件 | 说明 |
+|------|------|------|
+| Windows | `WB Convo Flow-0.3.0-setup.exe` | NSIS 安装包，可改安装目录、建桌面快捷方式 |
+| macOS | `WB Convo Flow-0.3.0-x64.dmg` / `...-arm64.dmg`（及同名 `.zip`） | 支持 Intel 与 Apple Silicon；**未签名**，首次打开见下方提示 |
+| Linux | `WB Convo Flow-0.3.0-x64.AppImage` / `...-x64.deb` | AppImage 直接运行；`.deb` 可 `dpkg -i` 安装 |
+
+> macOS 未签名说明：由于仓库未配置 Apple 开发者证书，macOS 安装包为未签名构建。首次打开若被 Gatekeeper 拦截，请在「访达」中**右键 → 打开**，或执行 `xattr -cr /Applications/WB\ Convo\ Flow.app` 后重新打开。
+
+### 从源码构建
+
+```bash
+npm install
+npm run build          # 构建前端到 dist/
+npm run dist           # 当前平台打包（输出到 release/）
+# 或指定平台：
+npm run dist:win       # Windows: release/*.exe
+npm run dist:mac       # macOS:   release/*.dmg + *.zip
+npm run dist:linux     # Linux:   release/*.AppImage + *.deb
+```
+
+### 自动发布
+
+推送版本标签即触发 GitHub Actions 在三个平台 runner 自动构建并发布到 Releases：
+
+```bash
+git tag v0.3.0 && git push origin v0.3.0
+```
+
 ## 交互速查
 
 | 操作 | 方式 |

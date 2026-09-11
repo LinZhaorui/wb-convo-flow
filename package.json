@@ -1,16 +1,23 @@
 {
   "name": "wb-convo-flow",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "WorkBuddy 对话可视化工作流插件：标签化浏览工作空间对话 + 受 Langflow/Dify 启发的可视化编排",
+  "main": "electron/main.js",
+  "description": "WorkBuddy 对话可视化工作流插件：标签化浏览工作空间对话 + 受 Langflow/Dify 启发的可视化编排（含 Windows/macOS/Linux 桌面安装包）",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 5173",
     "server": "node server/server.js",
     "start": "node server/server.js",
-    "mcp": "node server/mcp-server.js"
+    "mcp": "node server/mcp-server.js",
+    "electron": "electron .",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
@@ -22,6 +29,8 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^33.2.0",
+    "electron-builder": "^26.0.12",
     "vite": "^5.4.8"
   }
 }

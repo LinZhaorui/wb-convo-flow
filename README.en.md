@@ -68,6 +68,42 @@ npm run dev        # terminal 2: Vite dev server (5173, /api proxied)
 >
 > Then **trust** the connector in WorkBuddy's Connector Management page. Available tools: `open_flow_studio` (starts the local server and returns the URL) and `list_workspaces` (workspace overview).
 
+## Desktop installers
+
+The project also ships **native installers for Windows / macOS / Linux** (Electron-wrapped, runtime bundled, zero external dependencies).
+
+### Download
+
+Grab the package for your platform from the GitHub **Releases** page:
+
+| Platform | File | Notes |
+|----------|------|-------|
+| Windows | `WB Convo Flow-0.3.0-setup.exe` | NSIS installer — choose install dir, desktop shortcut |
+| macOS | `WB Convo Flow-0.3.0-x64.dmg` / `...-arm64.dmg` (plus `.zip`) | Intel & Apple Silicon; **unsigned** — see note below |
+| Linux | `WB Convo Flow-0.3.0-x64.AppImage` / `...-x64.deb` | AppImage runs directly; `.deb` via `dpkg -i` |
+
+> macOS unsigned note: the repo has no Apple Developer certificate, so the macOS build is unsigned. If Gatekeeper blocks the first launch, **right-click → Open** in Finder, or run `xattr -cr /Applications/WB\ Convo\ Flow.app` and try again.
+
+### Build from source
+
+```bash
+npm install
+npm run build        # build frontend into dist/
+npm run dist         # package for the current platform (outputs to release/)
+# or target a platform:
+npm run dist:win     # Windows: release/*.exe
+npm run dist:mac     # macOS:   release/*.dmg + *.zip
+npm run dist:linux   # Linux:   release/*.AppImage + *.deb
+```
+
+### Automated release
+
+Pushing a version tag triggers GitHub Actions to build on all three platforms and publish to Releases:
+
+```bash
+git tag v0.3.0 && git push origin v0.3.0
+```
+
 ## Interaction cheat sheet
 
 | Action | How |

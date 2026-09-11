@@ -1,0 +1,53 @@
+# electron-builder 配置：跨平台桌面安装包
+# 运行：npm run dist（当前平台） / npm run dist:win|mac|linux
+appId: com.workbuddy.convoflow
+productName: WB Convo Flow
+copyright: Copyright © 2026 LinZhaorui
+directories:
+  output: release
+  buildResources: build
+# 打包范围：保留运行时所需（dist / server / electron / 生产依赖），剔除源码与文档
+# 注意：不要在 files 中显式包含 node_modules，交由 electron-builder 自动按生产依赖裁剪，
+# 避免把 vite / electron / electron-builder 等开发依赖打进安装包。
+files:
+  - "package.json"
+  - "dist/**/*"
+  - "server/**/*"
+  - "electron/**/*"
+  - "!src/**/*"
+  - "!.github/**/*"
+  - "!docs/**/*"
+  - "!scripts/**/*"
+  - "!test/**/*"
+  - "!**/*.md"
+  - "!**/*.map"
+  - "!**/*.tsbuildinfo"
+  - "!**/node_modules/*/{test,tests,__tests__,docs,doc}/**/*"
+win:
+  target:
+    - nsis
+  artifactName: ${productName}-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  shortcutName: WB Convo Flow
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  artifactName: ${productName}-${version}-${arch}.${ext}
+linux:
+  category: Development
+  target:
+    - AppImage
+    - deb
+  artifactName: ${productName}-${version}-${arch}.${ext}
+# 发布到 GitHub Releases（CI 用 GITHUB_TOKEN 自动发布）
+publish:
+  - provider: github
+    releaseType: release

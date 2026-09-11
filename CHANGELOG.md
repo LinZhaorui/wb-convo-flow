@@ -2,6 +2,14 @@
 
 ## 0.3.0 (2026-09-10)
 
+### 桌面端原生安装包
+- 采用 **Electron + electron-builder** 封装，自带 Chromium + Node 运行时，**开箱即用、无需额外环境依赖**
+- 后端 Express 重构为可内嵌的 `buildApp()` 工厂（`server/app.js`），Electron 主进程直接挂载，避免跨 asar 子进程启动问题
+- 双击对话节点产生的 `workbuddy://chat/<uuid>` 深链在桌面端由主进程拦截并通过 `shell.openExternal` 唤起 WorkBuddy 原生窗口
+- 新增 `.github/workflows/release.yml`：推送 `v*` 标签时在 Windows / macOS / Linux 三平台 runner 自动构建并发布到 GitHub Releases（含清晰版本号与本文更新说明）
+- 安装包产出：Windows `WB Convo Flow-0.3.0-setup.exe`（NSIS）、macOS `.dmg` + `.zip`（x64 / arm64）、Linux `.AppImage` + `.deb`（x64）
+- 注：macOS 安装包为**未签名**构建（仓库未配置 Apple 证书），首次打开需在「访达」中右键 → 打开，或执行 `xattr -cr /Applications/WB\ Convo\ Flow.app`
+
 ### 嵌入 WorkBuddy
 - 编排器可由 WorkBuddy **内置浏览器面板**承载（MCP 工具 `open_flow_studio` / 中文技能「对话工作流编排器」拉起），真正嵌入主界面中部，独立浏览器访问保留为兜底
 - **双击节点**通过 `workbuddy://chat/<uuid>` 深链唤起 WorkBuddy 主窗口并定位到原生对话；模态窗保留为画布内「预览」，并新增「在 WorkBuddy 打开」入口
