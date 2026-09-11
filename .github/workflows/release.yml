@@ -4,6 +4,8 @@ name: Build & Release Desktop
 # 并用 GITHUB_TOKEN 自动发布到 GitHub Releases。
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
