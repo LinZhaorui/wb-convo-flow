@@ -108,6 +108,9 @@ jobs:
             PUB_RC=$?
           fi
 
+          # 不论上传/新建，统一写入清晰的中文发布说明（满足"版本号+更新说明"要求）
+          gh release edit "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" || echo "(notes update skipped)"
+
           if [ "$PUB_RC" != "0" ]; then
             echo "== PUBLISH FAILED (rc=$PUB_RC); opening debug issue via REST API =="
             {
