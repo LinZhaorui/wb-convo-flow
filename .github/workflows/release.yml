@@ -31,10 +31,6 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install Linux deps (libfuse2 for AppImage)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libfuse2
-
       - name: Install dependencies
         run: npm ci
 
