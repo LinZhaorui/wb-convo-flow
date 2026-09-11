@@ -1,7 +1,7 @@
 name: Build & Release Desktop
 
-# 在推送版本标签（v*）或手动触发时，于三个平台 runner 上构建桌面安装包，
-# 并用 GITHUB_TOKEN 自动发布到 GitHub Releases。
+# 推送 main 或 v* 标签、或手动触发时，于三个平台构建桌面安装包，
+# 再统一发布到 GitHub Releases（单一发布任务，避免并发写同一 Release 的竞争）。
 on:
   push:
     branches:
@@ -31,16 +31,66 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Install Linux deps (libfuse2 for AppImage)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libfuse2
+
       - name: Install dependencies
         run: npm ci
 
       - name: Build frontend
         run: npm run build
 
-      - name: Build & publish (Electron)
-        # electron-builder 在本平台构建并自动发布到 Releases
-        run: npx electron-builder --publish always
+      - name: Build desktop (no publish)
+        # 仅打包，不发布；发布交由统一的 release 任务，避免三平台并发写同一 Release
+        run: npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: release/*
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: Collect installers
+        run: |
+          mkdir -p out
+          cp -r all-artifacts/dist-*/. out/ 2>/dev/null || true
+          echo "=== collected assets ===" && ls -la out
+
+      - name: Publish to GitHub Releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 仓库未配置 Apple 证书，关闭自动签名发现，产出未签名安装包
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          NOTES="## WB Convo Flow $TAG
+
+          桌面端原生安装包（Electron 封装，开箱即用、无额外环境依赖）。
+
+          | 平台 | 文件 |
+          |------|------|
+          | Windows | \`WB Convo Flow-${VERSION}-setup.exe\` (NSIS) |
+          | macOS | \`WB Convo Flow-${VERSION}-x64.dmg\` / \`...-arm64.dmg\` (+ .zip) |
+          | Linux | \`WB Convo Flow-${VERSION}-x86_64.AppImage\` / \`..._amd64.deb\` |
+
+          > macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键→打开，或 \`xattr -cr /Applications/WB\\\\ Convo\\\\ Flow.app\`。
+          "
+          # 若同名 Release 已存在（重跑），先删除再重建，确保单一 Release 含全部平台资产
+          gh release delete "$TAG" --yes || true
+          gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest out/*
+
+      - name: Show release URL
+        run: node -p "process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/releases/tag/v' + require('./package.json').version"
