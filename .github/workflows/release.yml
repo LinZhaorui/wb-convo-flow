@@ -54,25 +54,32 @@ jobs:
     name: Publish Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Download all artifacts
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts (flattened)
+        # merge-multiple 将所有矩阵产物直接扁平合并进 out/，避免子目录导致 glob 失配
         uses: actions/download-artifact@v4
         with:
-          path: all-artifacts
+          path: out
+          merge-multiple: true
 
-      - name: Collect installers
+      - name: List collected assets
         run: |
-          mkdir -p out
-          cp -r all-artifacts/dist-*/. out/ 2>/dev/null || true
-          echo "=== collected assets ===" && ls -la out
+          echo "=== collected assets ==="
+          ls -la out
 
-      - name: Publish to GitHub Releases
+      - name: Publish to GitHub Releases (idempotent, never deletes)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e
           VERSION=$(node -p "require('./package.json').version")
           TAG="v$VERSION"
-          NOTES="## WB Convo Flow $TAG
+          NOTES="## WB Convo Flow ${TAG}
 
           桌面端原生安装包（Electron 封装，开箱即用、无额外环境依赖）。
 
@@ -82,11 +89,13 @@ jobs:
           | macOS | \`WB Convo Flow-${VERSION}-x64.dmg\` / \`...-arm64.dmg\` (+ .zip) |
           | Linux | \`WB Convo Flow-${VERSION}-x86_64.AppImage\` (通用包；.deb 可在本地具备 dpkg/fakeroot 时启用) |
 
-          > macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键→打开，或 \`xattr -cr /Applications/WB\\\\ Convo\\\\ Flow.app\`。
-          "
-          # 若同名 Release 已存在（重跑），先删除再重建，确保单一 Release 含全部平台资产
-          gh release delete "$TAG" --yes || true
-          gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest out/*
+          > macOS 安装包为未签名构建（仓库未配置 Apple 证书）。首次打开若被拦截：访达中右键→打开，或执行 xattr -cr 解除隔离。"
 
-      - name: Show release URL
-        run: node -p "process.env.GITHUB_SERVER_URL + '/' + process.env.GITHUB_REPOSITORY + '/releases/tag/v' + require('./package.json').version"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG 已存在，补充/覆盖缺失资产..."
+            gh release upload "$TAG" --clobber out/*
+          else
+            echo "创建新 Release $TAG ..."
+            gh release create "$TAG" --title "WB Convo Flow $TAG" --notes "$NOTES" --latest out/*
+          fi
+          echo "发布完成: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
